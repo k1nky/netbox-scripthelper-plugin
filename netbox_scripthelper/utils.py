@@ -1,5 +1,7 @@
 from typing import List
-from netaddr import IPSet, IPNetwork
+from netaddr import IPSet, IPNetwork, IPAddress
+from django.core.exceptions import ValidationError
+from ipam.models import Prefix
 
 
 class IPSplitter:
@@ -23,3 +25,16 @@ class IPSplitter:
                 break
 
         return subnets
+
+
+def get_available_ip_list(prefix: Prefix, base_addr: str, size: int) -> List[IPAddress]:
+    available_addresses = prefix.get_available_ips()
+    base_addr = base_addr.split('/')[0]
+    addresses = []
+    for i in range(0, size):
+        next_addr = IPAddress(base_addr) + i
+        if next_addr in available_addresses:
+            addresses.append(next_addr)
+    if len(addresses) != size:
+        raise ValidationError("not enough free addresses")
+    return addresses
