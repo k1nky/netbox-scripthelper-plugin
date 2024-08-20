@@ -26,6 +26,19 @@ echo netbox-scripthelper >> local_requirements.txt
 Inspired by https://github.com/netbox-community/netbox/discussions/9326.
 This field allows you to select available models (such as VLAN, Prefix, Address) in the NetBox Script interface.
 
+Supported locations:
+
+* `/api/plugins/scripthelper/ip-ranges/{{iprange}}/available-ips/` - returns list of available IP addresses from the IP range `{{iprange}}`;
+* `/api/plugins/scripthelper/prefixes/{{prefix}}/available-prefixes/` - returns list of available prefixes from the parent prefix `{{prefix}}`;
+* `/api/plugins/scripthelper/prefixes/{{prefix}}/available-ips/` - returns list of available IP addresses from the prefix `{{prefix}}`;
+* `/api/plugins/scripthelper/vlan-groups/{{vlan_group}}/available-vlans/` - returns list of available VLANs from the VLAN group `{{vlan_group}}`.
+
+You can set a limit on the number of result records using the `limit` query parameter. For example, `/api/plugins/scripthelper/prefixes/{{prefix}}/available-ips/?limit=10` returns no more than 10 records.
+
+Additionally `prefixes/{{prefix}}/available-prefixes/` provides a `prefixlen` query parameter, which specifies that the returned networks have fixed size.
+
+### Example
+
 ```
 import extras.scripts as es
 from ipam.models import Prefix
@@ -38,12 +51,58 @@ class ExampleDynamicChoiceField(es.Script):
 
     prefix = es.ObjectVar(
         model=Prefix,
-        required=True,
     )
+    # show available IP addresses from the prefix specified in the field above
     address = DynamicChoiceVar(
         api_url="/api/plugins/scripthelper/prefixes/{{prefix}}/available-ips/",
         label='Address',
-        required=True,
     )
+    
+    # show available VLANs from the fixed VLAN group with ID 10
+    vlan = DynamicChoiceVar(
+        api_url="/api/plugins/scripthelper/vlan-groups/10/available-vlans/",
+        label='VLAN',
+    )
+    
+    # show no more than 20 child prefixes from the prefix {{prefix}} with size of 24
+    child_prefix = DynamicChoiceVar(
+        api_url="/api/plugins/scripthelper/prefixes/{{prefix}}/available-prefixes/",
+        label='Child prefix',
+        query_params={
+            'limit': 20,
+            'prefixlen': 24,
+        }
+    )
+
+    def run(self, data, commit):
+        # data['address'] => selected IP Address as string
+        # data['vlan'] => selected VID as string
+        # data['child_prefix'] => selected child prefix with mask as string
+        pass
+
+```
+
+## ExpandableStringVar
+
+A small wrapper around the NetBox original `ExpandableNameField` for use in custom scripts. The field allows for numeric range expansion, such as `Gi0/[1-3]`. 
+
+
+### Example
+
+```
+import extras.scripts as es
+from netbox_scripthelper.fields import ExpandableStringVar
+
+
+class ExampleExpandableStringVar(es.Script):
+
+    vm_name = ExpandableStringVar(
+        label='Name',
+        description="Alphanumeric ranges are supported for bulk creation. (example: my-new-vm[1-3].exmaple.com)."
+    )
+
+    def run(self, data, commit):
+        # data['vm_name'] => ['my-new-vm1.exmaple.com', 'my-new-vm2.exmaple.com', 'my-new-vm3.exmaple.com']
+        pass
 
 ```

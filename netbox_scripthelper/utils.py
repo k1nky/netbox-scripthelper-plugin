@@ -10,7 +10,7 @@ class IPSplitter:
     def __init__(self, prefixes: IPSet):
         self.prefixes = prefixes
 
-    def split(self, prefix_len: int) -> List[IPNetwork]:
+    def split(self, prefix_len: int, limit: int) -> List[IPNetwork]:
         subnets = []
         if prefix_len == 0:
             return list(self.prefixes.iter_cidrs())
@@ -18,5 +18,8 @@ class IPSplitter:
             if free_net.prefixlen > prefix_len:
                 continue
             subnets.extend(list(free_net.subnet(prefix_len)))
+            if limit and len(subnets) > limit:
+                subnets = subnets[:limit]
+                break
 
         return subnets
