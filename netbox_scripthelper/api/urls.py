@@ -5,12 +5,11 @@ from . import views
 app_name = 'scripthelper'
 
 urlpatterns = [
-    # TODO: urls:ip-ranges
-    # path(
-    #     'ip-ranges/<int:pk>/available-ips/',
-    #     views.IPRangeAvailableIPAddressesView.as_view(),
-    #     name='iprange-available-ips'
-    # ),
+    path(
+        'ip-ranges/<int:pk>/available-ips/',
+        views.IPRangeAvailableIPAddressesView.as_view(),
+        name='iprange-available-ips'
+    ),
     path(
         'prefixes/<int:pk>/available-prefixes/',
         views.AvailablePrefixesView.as_view(),

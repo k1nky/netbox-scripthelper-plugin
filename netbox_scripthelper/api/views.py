@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ipam.models import VLAN, VLANGroup, Prefix, IPAddress
+from ipam.models import VLAN, VLANGroup, Prefix, IPAddress, IPRange
 from netbox.api.viewsets.mixins import ObjectValidationMixin
 
 from .serializers import (AvailableVLANSerializer,
@@ -42,11 +42,10 @@ class PrefixAvailableIPAddressesView(AvailableIPAddressesView):
         return get_object_or_404(Prefix.objects.restrict(request.user), pk=pk)
 
 
-# TODO: views: ip-ranges
-# class IPRangeAvailableIPAddressesView(AvailableIPAddressesView):
+class IPRangeAvailableIPAddressesView(AvailableIPAddressesView):
 
-#     def get_parent(self, request, pk):
-#         return get_object_or_404(IPRange.objects.restrict(request.user), pk=pk)
+    def get_parent(self, request, pk):
+        return get_object_or_404(IPRange.objects.restrict(request.user), pk=pk)
 
 
 class AvailableVLANsView(ObjectValidationMixin, APIView):
