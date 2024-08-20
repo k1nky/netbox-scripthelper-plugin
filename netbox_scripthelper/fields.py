@@ -3,6 +3,7 @@ from django import forms
 from django.conf import settings
 from extras.scripts import ScriptVariable
 from utilities.forms import widgets
+from utilities.forms.fields import ExpandableNameField
 
 
 class DynamicChoiceField(forms.ChoiceField):
@@ -85,3 +86,7 @@ class DynamicChoiceVar(ScriptVariable):
         form_field.widget.attrs['data-url'] = self.api_url
 
         return form_field
+
+
+class ExpandableStringVar(ScriptVariable):
+    form_field = ExpandableNameField
