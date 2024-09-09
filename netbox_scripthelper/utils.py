@@ -1,7 +1,5 @@
-from typing import List
-from netaddr import IPSet, IPNetwork, IPAddress
-from django.core.exceptions import ValidationError
-from ipam.models import Prefix
+from typing import List, Any
+from netaddr import IPSet, IPNetwork, IPAddress, IPRange
 
 
 class IPSplitter:
@@ -12,7 +10,7 @@ class IPSplitter:
     def __init__(self, prefixes: IPSet):
         self.prefixes = prefixes
 
-    def split(self, prefix_len: int, limit: int) -> List[IPNetwork]:
+    def split(self, prefix_len: int, limit: int = None) -> List[IPNetwork]:
         subnets = []
         if prefix_len == 0:
             return list(self.prefixes.iter_cidrs())
@@ -27,14 +25,34 @@ class IPSplitter:
         return subnets
 
 
-def get_available_ip_list(prefix: Prefix, base_addr: str, size: int) -> List[IPAddress]:
-    available_addresses = prefix.get_available_ips()
+def get_available_ips_list(ipset: IPSet, base_addr: str, size: int) -> List[IPAddress]:
+    """
+    Returns a list of addresses from `ipset`, starting with `base_addr`.
+    The size of the list is limited by the "size" argument.
+    Raises IndexError if there are not enough free addresses.
+    """
+
     base_addr = base_addr.split('/')[0]
+    all = IPSet(['0.0.0.0/0'])
+    excluded = IPSet([IPRange('0.0.0.0', IPAddress(base_addr) - 1),])
+
+    availables = (all ^ excluded) & ipset
     addresses = []
-    for i in range(0, size):
-        next_addr = IPAddress(base_addr) + i
-        if next_addr in available_addresses:
-            addresses.append(next_addr)
+    for ip in availables:
+        if len(addresses) >= size:
+            break
+        addresses.append(ip)
     if len(addresses) != size:
-        raise ValidationError("not enough free addresses")
+        raise IndexError("not enough free addresses")
     return addresses
+
+
+def make_link(obj: Any) -> str:
+    """
+    Returns a reference to the object enclosed in the <a> tag.
+    """
+
+    try:
+        return f'<a href="{obj.get_absolute_url()}">{str(obj)}</a>'
+    except Exception:
+        return str(obj)
