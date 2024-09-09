@@ -5,6 +5,7 @@ setup(
     version='0.3.0',
     description='Collections of utilities for Netbox custom scripts.',
     url='https://github.com/k1nky/netbox-scripthelper-plugin',
+    long_description_content_type='text/markdown',
     author='Andrey Shalashov',
     author_email='avshalashov@yandex.ru',
     license='Apache 2.0',
