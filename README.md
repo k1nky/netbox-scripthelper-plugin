@@ -106,3 +106,40 @@ class ExampleExpandableStringVar(es.Script):
         pass
 
 ```
+
+## make_link
+
+The helper returns a reference to the object enclosed in the `<a>` tag. This can be useful in a script output.
+
+```
+...
+from netbox_scripthelper.utils import make_link as _ml
+
+
+class ExampleMakeLink(Script):
+
+...
+
+    def run(self, data, commit):
+        ...
+        prefix = Prefix.objects.create(prefix='192.168.0.0/24')
+        self.info_log(f'Created prefix: {_ml(prefix)}')
+
+```
+
+## IPSpliter
+
+IPSliter splits set of networks to smaller networks with fixed mask.
+
+```
+from netbox_scripthelper.utils import IPSpliter
+from netaddr import IPSet, IPNetwork
+
+spliter = IPSplitter(IPSet([
+    IPNetwork('192.168.1.0/24'),
+    IPNetwork('192.168.3.0/24')
+]))
+
+# subnets => [IPNetwork('192.168.1.0/28', '192.168.1.16/28', ...)]
+subnetes = spliter.split(28)
+```
