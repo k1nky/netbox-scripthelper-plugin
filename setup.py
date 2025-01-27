@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='netbox_scripthelper',
-    version='0.3.1',
+    version='0.3.2',
     description='Collections of utilities for Netbox custom scripts.',
     url='https://github.com/k1nky/netbox-scripthelper-plugin',
     long_description_content_type='text/markdown',

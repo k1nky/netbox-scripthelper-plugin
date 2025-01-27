@@ -8,6 +8,7 @@ from rest_framework import status
 
 from ipam.models import VLANGroup, VLAN, Prefix, IPAddress
 from netbox_scripthelper.api.views import filter_results
+from django.db.backends.postgresql.psycopg_any import NumericRange
 
 
 class TestFilterResults(unittest.TestCase):
@@ -38,8 +39,8 @@ class TestAvailablesVLANS(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        VLANGroup.objects.create(name='TestVG1', slug='testvg1', min_vid=100, max_vid=1000)
-        vg2 = VLANGroup.objects.create(name='TestVG2', slug='testvg2', min_vid=10, max_vid=15)
+        VLANGroup.objects.create(name='TestVG1', slug='testvg1', vid_ranges=[NumericRange(100, 1000, bounds='[]')])
+        vg2 = VLANGroup.objects.create(name='TestVG2', slug='testvg2', vid_ranges=[NumericRange(10, 15, bounds='[]')])
         VLAN.objects.create(name='TestVlan2', vid=12, group=vg2)
 
     @override_settings(EXEMPT_VIEW_PERMISSIONS=['*'], LOGIN_REQUIRED=False)

@@ -1,4 +1,5 @@
 test:
+	# netbox/manage.py test -v netbox_scripthelper.tests
 	python -m unittest discover --verbose tests
 
 coverage:
