@@ -143,3 +143,28 @@ spliter = IPSplitter(IPSet([
 # subnets => [IPNetwork('192.168.1.0/28', '192.168.1.16/28', ...)]
 subnetes = spliter.split(28)
 ```
+
+## process_event_queue
+
+Inspired by https://github.com/netbox-community/netbox/issues/14896.
+
+The `process_event_queue` helper allows you to pass a snapshot of object changes to a script call on an event.
+
+### How to use
+
+1. Override original events_pipeline in configuration.py:
+```
+EVENTS_PIPELINE = ('netbox_scripthelper.events.process_event_queue', )
+```
+
+2. Create a new event rule with the Script action type.
+3. In the script handler, refer to the additional attributes:
+```
+    def run(self, data, commit):
+        postchange = data['snapshots']['postchange']
+        prechange = data['snapshots']['prechange']
+        event = data['event']
+        username = data['username']
+
+```
+
