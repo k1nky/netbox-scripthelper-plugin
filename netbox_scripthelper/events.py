@@ -1,17 +1,18 @@
+from collections import defaultdict
+
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django_rq import get_queue
 
-from core.models import Job
 from netbox.config import get_config
 from netbox.constants import RQ_QUEUE_DEFAULT
 from utilities.rqworker import get_rq_retry
-from extras.choices import EventRuleActionChoices, ObjectChangeActionChoices
+from extras.choices import EventRuleActionChoices
 from extras.models import EventRule
 
 
-def process_event_rules(event_rules, model_name, event, data, username=None, snapshots=None, request_id=None):
+def process_event_rules(event_rules, object_type, event_type, data, username=None, snapshots=None, request_id=None):
     if username:
         user = get_user_model().objects.get(username=username)
     else:
@@ -23,6 +24,10 @@ def process_event_rules(event_rules, model_name, event, data, username=None, sna
         if not event_rule.eval_conditions(data):
             continue
 
+        # Compile event data
+        event_data = event_rule.action_data or {}
+        event_data.update(data)
+
         # Webhooks
         if event_rule.action_type == EventRuleActionChoices.WEBHOOK:
 
@@ -33,9 +38,9 @@ def process_event_rules(event_rules, model_name, event, data, username=None, sna
             # Compile the task parameters
             params = {
                 "event_rule": event_rule,
-                "model_name": model_name,
-                "event": event,
-                "data": data,
+                "model_name": object_type.model,
+                "event_type": event_type,
+                "data": event_data,
                 "snapshots": snapshots,
                 "timestamp": timezone.now().isoformat(),
                 "username": username,
@@ -57,17 +62,27 @@ def process_event_rules(event_rules, model_name, event, data, username=None, sna
             # Resolve the script from action parameters
             script = event_rule.action_object.python_class()
             # a little trick for https://github.com/netbox-community/netbox/issues/14896
-            data['snapshots'] = snapshots
-            data['event'] = event
-            data['username'] = username
+            event_data['snapshots'] = snapshots
+            event_data['event'] = event_type
+            event_data['username'] = username
 
             # Enqueue a Job to record the script's execution
-            Job.enqueue(
-                "extras.scripts.run_script",
+            from extras.jobs import ScriptJob
+            ScriptJob.enqueue(
                 instance=event_rule.action_object,
                 name=script.name,
                 user=user,
-                data=data
+                data=event_data
+            )
+
+        # Notification groups
+        elif event_rule.action_type == EventRuleActionChoices.NOTIFICATION:
+            # Bulk-create notifications for all members of the notification group
+            event_rule.action_object.notify(
+                object_type=object_type,
+                object_id=event_data['id'],
+                object_repr=event_data.get('display'),
+                event_type=event_type
             )
 
         else:
@@ -80,30 +95,27 @@ def process_event_queue(events):
     """
     Flush a list of object representation to RQ for EventRule processing.
     """
-    events_cache = {
-        'type_create': {},
-        'type_update': {},
-        'type_delete': {},
-    }
+    events_cache = defaultdict(dict)
 
-    for data in events:
-        action_flag = {
-            ObjectChangeActionChoices.ACTION_CREATE: 'type_create',
-            ObjectChangeActionChoices.ACTION_UPDATE: 'type_update',
-            ObjectChangeActionChoices.ACTION_DELETE: 'type_delete',
-        }[data['event']]
-        content_type = data['content_type']
+    for event in events:
+        event_type = event['event_type']
+        object_type = event['object_type']
 
         # Cache applicable Event Rules
-        if content_type not in events_cache[action_flag]:
-            events_cache[action_flag][content_type] = EventRule.objects.filter(
-                **{action_flag: True},
-                object_types=content_type,
+        if object_type not in events_cache[event_type]:
+            events_cache[event_type][object_type] = EventRule.objects.filter(
+                event_types__contains=[event['event_type']],
+                object_types=object_type,
                 enabled=True
             )
-        event_rules = events_cache[action_flag][content_type]
+        event_rules = events_cache[event_type][object_type]
 
         process_event_rules(
-            event_rules, content_type.model, data['event'], data['data'], data['username'],
-            snapshots=data['snapshots'], request_id=data['request_id']
+            event_rules=event_rules,
+            object_type=object_type,
+            event_type=event['event_type'],
+            data=event['data'],
+            username=event['username'],
+            snapshots=event['snapshots'],
+            request_id=event['request_id']
         )

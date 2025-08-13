@@ -16,8 +16,8 @@ class ScriptHelperConfig(PluginConfig):
     required_settings = []
     default_settings = {}
     django_apps = []
-    min_version = '3.3.0'
-    max_version = '4.2.99'
+    min_version = '4.2.0'
+    max_version = '4.3.99'
 
 
 config = ScriptHelperConfig

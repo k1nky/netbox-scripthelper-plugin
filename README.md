@@ -161,6 +161,8 @@ EVENTS_PIPELINE = ('netbox_scripthelper.events.process_event_queue', )
 3. In the script handler, refer to the additional attributes:
 ```
     def run(self, data, commit):
+        if 'snapshots' not in data:
+            return
         postchange = data['snapshots']['postchange']
         prechange = data['snapshots']['prechange']
         event = data['event']
