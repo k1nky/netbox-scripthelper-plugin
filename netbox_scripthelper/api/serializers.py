@@ -30,11 +30,11 @@ class AvailableIPSerializer(serializers.Serializer):
     Representation of an IP address which does not exist in the database.
     """
     def to_representation(self, instance):
-        with_mask = self.context['request'].query_params.get('with_mask', 'True')
+        with_mask = self.context['request'].query_params.get('with_mask', 'true').lower()
 
-        value = f"{instance}/{self.context['parent'].mask_length}"
-        if with_mask == 'False':
-            value = str(instance)
+        value = str(instance)
+        if with_mask == 'true':
+            value = f"{instance}/{self.context['parent'].mask_length}"
 
         return {
             'id': value,
