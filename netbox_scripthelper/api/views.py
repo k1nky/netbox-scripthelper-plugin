@@ -7,7 +7,8 @@ from netbox.api.viewsets.mixins import ObjectValidationMixin
 
 from .serializers import (AvailableVLANSerializer,
                           AvailablePrefixSerializer,
-                          AvailableIPSerializer)
+                          AvailableIPSerializer,
+                          ChildIPSerializer)
 from netbox_scripthelper.utils import IPSplitter
 
 
@@ -98,6 +99,28 @@ class AvailablePrefixesView(ObjectValidationMixin, APIView):
         serializer = AvailablePrefixSerializer(subnets, many=True, context={
             'request': request,
             'vrf': prefix.vrf,
+        })
+        return Response(
+            {
+                'results': serializer.data
+            }
+        )
+
+
+class PrefixChildIPAddressesView(ObjectValidationMixin, APIView):
+    queryset = IPAddress.objects.all()
+
+    def get_parent(self, request, pk):
+        return get_object_or_404(Prefix.objects.restrict(request.user), pk=pk)
+
+    def get(self, request, pk):
+        parent = self.get_parent(request, pk)
+
+        ip_list = filter_results(request, parent.get_child_ips())
+        serializer = ChildIPSerializer(ip_list, many=True, context={
+            'request': request,
+            'parent': parent,
+            'vrf': parent.vrf,
         })
         return Response(
             {

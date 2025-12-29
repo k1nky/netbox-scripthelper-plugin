@@ -40,3 +40,16 @@ class AvailableIPSerializer(serializers.Serializer):
             'id': value,
             'display': value,
         }
+
+class ChildIPSerializer(serializers.Serializer):
+    """
+    Representation of an IP address which exists in the database.
+    """
+    def to_representation(self, instance):
+
+        value = str(instance)
+
+        return {
+            'id': value,
+            'display': value,
+        }

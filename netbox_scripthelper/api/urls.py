@@ -21,6 +21,11 @@ urlpatterns = [
         name='prefix-available-ips'
     ),
     path(
+        'prefixes/<int:pk>/child-ips/',
+        views.PrefixChildIPAddressesView.as_view(),
+        name='prefix-child-ips'
+    ),
+    path(
         'vlan-groups/<int:pk>/available-vlans/',
         views.AvailableVLANsView.as_view(),
         name='vlangroup-available-vlans'

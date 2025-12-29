@@ -31,6 +31,7 @@ Supported locations:
 * `/api/plugins/scripthelper/ip-ranges/{{iprange}}/available-ips/` - returns list of available IP addresses from the IP range `{{iprange}}`;
 * `/api/plugins/scripthelper/prefixes/{{prefix}}/available-prefixes/` - returns list of available prefixes from the parent prefix `{{prefix}}`;
 * `/api/plugins/scripthelper/prefixes/{{prefix}}/available-ips/` - returns list of available IP addresses from the prefix `{{prefix}}`;
+* `/api/plugins/scripthelper/prefixes/{{prefix}}/child-ips/` - returns list of child IP addresses from the prefix `{{prefix}}`;
 * `/api/plugins/scripthelper/vlan-groups/{{vlan_group}}/available-vlans/` - returns list of available VLANs from the VLAN group `{{vlan_group}}`.
 
 You can set a limit on the number of result records using the `limit` query parameter. For example, `/api/plugins/scripthelper/prefixes/{{prefix}}/available-ips/?limit=10` returns no more than 10 records.
